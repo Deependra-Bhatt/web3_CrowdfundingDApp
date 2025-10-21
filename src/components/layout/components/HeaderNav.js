@@ -17,14 +17,14 @@ const HeaderNav = () => {
       </Link>
       <Link href={"/CreateCampaign"}>
         <HeaderNavLinks
-          active={pathname === "/CreateCampaign" ? true : false}
+          $active={pathname === "/CreateCampaign" ? true : false}
         >
           Create Campaign
         </HeaderNavLinks>
       </Link>
       <Link href={"/Dashboard"}>
         <HeaderNavLinks
-          active={pathname === "/Dashboard" ? true : false}
+          $active={pathname === "/Dashboard" ? true : false}
         >
           Dashboard
         </HeaderNavLinks>
@@ -52,7 +52,7 @@ const HeaderNavLinks = styled.div`
   height: 100%;
   margin: 7px;
   background-color: ${(props) =>
-    props.active ? props.theme.bgSubDiv : props.theme.bgDiv};
+    props.$active ? props.theme.bgSubDiv : props.theme.bgDiv};
   padding: 0 5px;
   cursor: pointer;
   text-transform: uppercase;
