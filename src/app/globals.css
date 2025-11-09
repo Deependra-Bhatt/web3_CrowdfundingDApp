@@ -29,6 +29,8 @@
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  overflow-y: auto;
+  /*height: 100%;*/
   scroll-behavior: smooth;
 }
 body {
