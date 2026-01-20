@@ -6,12 +6,19 @@ import Campaign from "../../artifacts/contracts/Campaign.sol/Campaign.json";
 import HomeClient from "../components/Home/HomeClient";
 import Link from "next/link";
 
+// To make this a dynamic component
+export const dynamic = "force-dynamic";
+
+// ISR
+// Revalidate the data every 60 seconds
+// export const revalidate = 60;
+
 // CONFIGURATION
 const FACTORY_ADDRESS =
   process.env.NEXT_PUBLIC_ADDRESS || "FallbackFactoryAddress";
 const CAMPAIGN_ABI = Campaign.abi;
 const START_BLOCK = Number(
-  process.env.NEXT_PUBLIC_FACTORY_DEPLOYMENT_BLOCK_NUMBER || 0
+  process.env.NEXT_PUBLIC_FACTORY_DEPLOYMENT_BLOCK_NUMBER || 0,
 );
 const RPC_URL =
   process.env.NEXT_PUBLIC_RPC_URL || "https://rpc-amoy.polygon.technology/";
@@ -29,17 +36,15 @@ async function getAllCampaigns() {
     const factoryContract = new Contract(
       FACTORY_ADDRESS,
       CampaignFactory.abi,
-      rpcProvider
+      rpcProvider,
     ); // 3. Creating filter for all CampaignCreated events
 
     const filter = factoryContract.filters.campaignCreated(); // 4. Querying the blockchain for past campaignCreated events using queryFilter
 
-    console.log(`Querying all historical logs from block ${START_BLOCK}...`);
-
     const allCampaignList = await factoryContract.queryFilter(
       filter,
       START_BLOCK,
-      "latest"
+      "latest",
     ); // 5. Map logs to campaign addresses and fetch dynamic data
 
     const campaignsWithNulls = await Promise.all(
@@ -55,7 +60,7 @@ async function getAllCampaigns() {
         const campaignContract = new Contract(
           campaignAddress,
           CAMPAIGN_ABI,
-          rpcProvider
+          rpcProvider,
         ); // Calling the getCampaignSummary function to retrive data for a individual campaign
 
         const summary = await campaignContract.getCampaignSummary();
@@ -83,7 +88,7 @@ async function getAllCampaigns() {
           isSuccessful: isSuccessful,
           timeRemaining: isOver ? 0 : deadlineTimestamp - currentTime,
         };
-      })
+      }),
     ); // Filters out any failed mappings
 
     let campaigns = campaignsWithNulls.filter((c) => c !== null); // 6. Implement Sorting Logic // Priority: Active (timeRemaining > 0) > Successful (isOver && isSuccessful) > Failed (isOver && !isSuccessful)
