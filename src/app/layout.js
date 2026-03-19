@@ -4,9 +4,10 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import { Web3Provider } from "../components/Web3Context";
 import { ThemeProvider } from "../components/ThemeContext";
-import { NotificationProvider } from "../components/NotificationContext"; 
+import { NotificationProvider } from "../components/NotificationContext";
 import Navbar from "../components/Navbar";
 import { Toaster } from "react-hot-toast";
+import Footer from "@/components/Home/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -27,6 +28,7 @@ export default function RootLayout({ children }) {
               <main className="min-h-screen pt-20 container mx-auto p-4 md:p-8">
                 {children}
               </main>
+              <Footer />
               <Toaster position="top-center" />
             </Web3Provider>
           </NotificationProvider>

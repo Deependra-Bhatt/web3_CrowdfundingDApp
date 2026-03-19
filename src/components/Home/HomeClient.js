@@ -129,7 +129,7 @@ const HomeClient = ({ initialCampaigns }) => {
       {/* --- Filter and Pagination Bar --- */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
         {/* Filter Buttons */}
-        <div className="flex items-center space-x-3 mb-4 md:mb-0">
+        <div className="flex items-center space-x-1 mb-4 md:mb-0">
           <Filter className="w-5 h-5 text-lime-500" />
           <FilterButton value="all" label="All" />
           <FilterButton value="active" label="Active" />
@@ -142,13 +142,6 @@ const HomeClient = ({ initialCampaigns }) => {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50 whitespace-nowrap">
             {totalCampaignsInFilter} results
           </h2>
-          {/* {totalPages > 1 && (
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              setCurrentPage={setCurrentPage}
-            />
-          )} */}
         </div>
       </div>
 
