@@ -27,7 +27,7 @@ const Footer = () => {
                 href="/"
                 className="flex items-center space-x-2 transition-transform duration-300 hover:scale-[1.05]"
               >
-                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">
+                <span className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-indigo-600 to-violet-600">
                   LUMILIGHT
                 </span>
               </Link>
