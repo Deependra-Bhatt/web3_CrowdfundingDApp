@@ -98,8 +98,8 @@ const Navbar = () => {
             <span
               className={`text-2xl font-extrabold tracking-tight bg-clip-text text-transparent ${
                 theme === "light"
-                  ? "bg-gradient-to-r from-yellow-500 to-lime-600"
-                  : "bg-gradient-to-r from-lime-400 to-yellow-300"
+                  ? "bg-linear-to-r from-yellow-500 to-lime-600"
+                  : "bg-linear-to-r from-lime-400 to-yellow-300"
               }`}
             >
               LUMILIGHT
