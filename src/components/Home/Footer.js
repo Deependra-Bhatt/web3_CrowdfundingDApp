@@ -57,7 +57,7 @@ const Footer = () => {
                   href="/create-campaign"
                   className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm transition-colors"
                 >
-                  Start Funding
+                  Start Campaign
                 </Link>
               </li>
               <li>
