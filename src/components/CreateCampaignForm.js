@@ -1,33 +1,33 @@
-// src\components\CreateCampaignForm.js
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { useWeb3 } from "./Web3Context";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   Calendar,
-  Image,
+  Image as ImageIcon,
   DollarSign,
   Loader2,
   UserX,
   Tag,
   RocketIcon,
+  ChevronRight,
+  ChevronLeft,
+  Eye,
 } from "lucide-react";
 import { ethers } from "ethers";
 import { uploadDataToPinata } from "../utils/pinata";
 import toast from "react-hot-toast";
 import { convertDeadlineToUnix } from "@/utils";
 
-// CONFIGURATION CONSTANTS
 const PLATFORM_FEE_ADDRESS = process.env.NEXT_PUBLIC_PLATFORM_ADDRESS;
 
 const CreateCampaignForm = () => {
   const { address, signer, factoryContract, isLoading, connectWallet } =
     useWeb3();
-
   const router = useRouter();
 
+  const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -39,35 +39,17 @@ const CreateCampaignForm = () => {
 
   const [isCreator, setIsCreator] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
   const [isCheckingCreator, setIsCheckingCreator] = useState(true);
-  const [uploadLoading, setUploadLoading] = useState(false);
-  const [pinataKeys, setPinataKeys] = useState({ apiKey: "", apiSecret: "" });
+  const [imagePreview, setImagePreview] = useState(null);
 
-  // Step 1: Check Creator Status & Load Pinata Keys
   useEffect(() => {
-    const checkStatusAndLoadKeys = async () => {
-      // Load Pinata Keys
-      const apiKey = process.env.NEXT_PUBLIC_PINATA_API_KEY;
-      const apiSecret = process.env.NEXT_PUBLIC_PINATA_API_SECRET;
-
-      if (apiKey && apiSecret) {
-        setPinataKeys({ apiKey: apiKey.trim(), apiSecret: apiSecret.trim() });
-      } else {
-        console.error(
-          "FATAL: Pinata Keys not loaded. Check .env.local and NEXT_PUBLIC_ prefix."
-        );
-        toast.error("Pinata credentials missing. Check console.");
-      }
-
-      // Check Creator Status
+    const checkStatus = async () => {
       if (factoryContract && address) {
         try {
           const status = await factoryContract.isCreator(address);
           setIsCreator(status);
         } catch (err) {
-          console.error("Error checking creator status:", err);
-          setError("Failed to verify creator status. Check console.");
+          console.error(err);
         } finally {
           setIsCheckingCreator(false);
         }
@@ -75,367 +57,318 @@ const CreateCampaignForm = () => {
         setIsCheckingCreator(false);
       }
     };
-    checkStatusAndLoadKeys();
+    checkStatus();
   }, [factoryContract, address]);
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
     if (type === "file") {
-      setForm({ ...form, [name]: files[0] });
+      const file = files[0];
+      setForm((prev) => ({ ...prev, [name]: file }));
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => setImagePreview(reader.result);
+        reader.readAsDataURL(file);
+      }
     } else {
-      setForm({ ...form, [name]: value });
+      setForm((prev) => ({ ...prev, [name]: value }));
     }
-    setError("");
   };
 
-  const validateForm = () => {
-    const { title, description, requiredAmount, deadline, category } = form;
-    if (!title || !description || !requiredAmount || !deadline || !category) {
-      setError("Please fill out all required fields.");
-      return false;
-    }
-    if (isNaN(parseFloat(requiredAmount)) || parseFloat(requiredAmount) <= 0) {
-      setError("Required amount must be a positive number.");
-      return false;
-    }
+  const canGoToNextStep = () => {
+    if (step === 1)
+      return form.title.trim() !== "" && form.description.trim() !== "";
+    if (step === 2)
+      return (
+        form.requiredAmount !== "" &&
+        form.category !== "" &&
+        form.deadline !== ""
+      );
     return true;
   };
 
-  // Step 3: Handle Submission & Transaction (with IPFS Upload)
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm() || !signer || !factoryContract) return;
-
-    if (!isCreator) {
-      setError("You must be a registered Creator to launch a campaign.");
+  const handleSubmit = async () => {
+    if (!canGoToNextStep() || !form.imageFile) {
+      toast.error("Please complete all fields and upload an image.");
       return;
     }
 
-    const { apiKey, apiSecret } = pinataKeys;
-    if (!apiKey || !apiSecret) {
-      setError("Pinata credentials missing. Cannot upload files.");
-      return;
-    }
+    const apiKey = process.env.NEXT_PUBLIC_PINATA_API_KEY;
+    const apiSecret = process.env.NEXT_PUBLIC_PINATA_API_SECRET;
 
     setIsSubmitting(true);
-    setUploadLoading(true);
-    setError("");
-
-    let imageCID = "";
-    let descriptionCID = "";
+    const toastId = toast.loading("Preparing assets...");
 
     try {
-      // --- 3.1 IPFS Uploads ---
-
-      // 1. Upload Description (Story)
-      toast.loading("Uploading Campaign Description to IPFS...", {
-        id: "desc-upload",
-      });
-      try {
-        descriptionCID = await uploadDataToPinata(
-          form.description, // String content
-          "campaign-story.txt",
-          apiKey,
-          apiSecret
-        );
-        toast.success("Description Uploaded!", { id: "desc-upload" });
-      } catch (error) {
-        toast.error("Failed to upload Description.", { id: "desc-upload" });
-        throw new Error(`Description upload failed: ${error.message}`);
-      }
-
-      // 2. Upload Image
-      if (form.imageFile) {
-        toast.loading("Uploading Project Image to IPFS...", {
-          id: "image-upload",
-        });
-        try {
-          imageCID = await uploadDataToPinata(
-            form.imageFile, // File object
-            form.imageFile.name,
-            apiKey,
-            apiSecret
-          );
-          toast.success("Image Uploaded!", { id: "image-upload" });
-        } catch (error) {
-          toast.error("Failed to upload Image.", { id: "image-upload" });
-          throw new Error(`Image upload failed: ${error.message}`);
-        }
-      } else {
-        toast("No image selected, please upload image.", { icon: "🖼️" });
-      }
-      setUploadLoading(false);
-
-      // --- 3.2 Prepare Contract Arguments ---
-      const requiredAmountWei = ethers.parseEther(
-        form.requiredAmount.toString()
+      toast.loading("Uploading story to IPFS...", { id: toastId });
+      const descriptionCID = await uploadDataToPinata(
+        form.description,
+        "story.txt",
+        apiKey,
+        apiSecret,
       );
+
+      toast.loading("Uploading image to IPFS...", { id: toastId });
+      const imageCID = await uploadDataToPinata(
+        form.imageFile,
+        form.imageFile.name,
+        apiKey,
+        apiSecret,
+      );
+
       const deadlineUnix = convertDeadlineToUnix(form.deadline);
+      const requiredAmountWei = ethers.parseEther(
+        form.requiredAmount.toString(),
+      );
 
-      if (deadlineUnix <= Math.floor(Date.now() / 1000)) {
-        setError("The campaign deadline must be set in the future.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Storing the CID (`ipfs://<CID>`) is best development practice
-      const campaignImageURI = imageCID ? `ipfs://${imageCID}` : "";
-      const campaignStoryURI = `ipfs://${descriptionCID}`;
-
-      toast.loading("Sending Transaction...", { id: "tx-send" });
-
-      // --- 3.3 Execute the Transaction ---
+      toast.loading("Requesting Signature...", { id: toastId });
       const tx = await factoryContract.createCampaign(
         form.title,
         requiredAmountWei,
-        campaignImageURI,
+        `ipfs://${imageCID}`,
         form.category,
-        campaignStoryURI,
+        `ipfs://${descriptionCID}`,
         deadlineUnix,
-        PLATFORM_FEE_ADDRESS
+        PLATFORM_FEE_ADDRESS,
       );
 
-      // Wait for the transaction to be mined
+      toast.loading("Mining Campaign...", { id: toastId });
       await tx.wait();
 
-      toast.success("Campaign Created Successfully!", { id: "tx-send" });
+      toast.success("Campaign Successfully Launched!", { id: toastId });
       router.push("/");
     } catch (err) {
-      setUploadLoading(false);
-      console.error("Campaign Creation Error:", err);
-      const userMessage =
-        err.reason ||
-        "Transaction failed due to an error. Please check console";
-      setError(userMessage);
-      toast.dismiss("tx-send");
-      toast.error("Transaction failed.");
-    } finally {
+      console.error(err);
+      toast.error(err.reason || "Blockchain Transaction Failed", {
+        id: toastId,
+      });
       setIsSubmitting(false);
     }
   };
 
-  // --- Conditional Rendering based on Web3 Status (Unchanged) ---
-  if (isLoading || isCheckingCreator) {
+  if (isLoading || isCheckingCreator)
     return (
-      <div className="flex justify-center items-center h-64 text-gray-500 dark:text-gray-400 animate-fade-in">
-        <Loader2 className="w-8 h-8 animate-spin-slow mr-3" />
-        {isLoading
-          ? "Waiting for Web3 connection..."
-          : "Checking Creator status..."}
+      <div className="flex flex-col items-center justify-center p-20 gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-lime-500" />
+        <p className="text-sm font-bold text-gray-500 animate-pulse uppercase tracking-widest">
+          Securing Connection...
+        </p>
       </div>
     );
-  }
 
-  if (!address) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 p-6 bg-gray-100 dark:bg-gray-800 rounded-xl animate-fade-in-down">
-        <p className="text-xl font-semibold text-red-500 mb-4">
-          Wallet Disconnected
-        </p>
-        <p className="text-gray-600 dark:text-gray-300 mb-6">
-          Please connect your wallet to launch a new campaign.
-        </p>
-        <button
-          onClick={connectWallet}
-          className="px-6 py-3 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition-all duration-300 hover:scale-[1.05] active:scale-95"
-        >
-          Connect Wallet
-        </button>
-      </div>
-    );
-  }
-
-  if (!isCreator) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 p-6 bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 rounded-xl animate-fade-in-down">
-        <UserX className="w-12 h-12 text-red-600 mb-4" />
-        <p className="text-2xl font-semibold text-red-700 dark:text-red-400 mb-3">
-          Creator Registration Required
-        </p>
-        <p className="text-gray-700 dark:text-gray-300 mb-6 text-center">
-          Only registered creators can launch campaigns. Please register through
-          the <b>Dashboard</b> or the <b>Navbar</b> button first.
-        </p>
-        <Link
-          href="/dashboard"
-          className="px-6 py-3 bg-lime-500 text-white font-bold rounded-full hover:bg-lime-600 transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-lime-500/50"
-        >
-          Go to Dashboard
-        </Link>
-      </div>
-    );
-  }
-
-  // Main Form UI
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="p-8 bg-white dark:bg-gray-800 shadow-xl rounded-xl space-y-6 animate-fade-in-up"
-    >
-      {/* Title */}
-      <div>
-        <label
-          htmlFor="title"
-          className="block text-sm-b font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Campaign Title
-        </label>
-        <input
-          type="text"
-          name="title"
-          id="title"
-          value={form.title}
-          onChange={handleChange}
-          required
-          placeholder="e.g., Build a community garden"
-          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-50 focus:ring-lime-500 focus:border-lime-500 focus:shadow-lime-500/40 transition shadow-sm"
-        />
-      </div>
-
-      {/* Description */}
-      <div>
-        <label
-          htmlFor="description"
-          className="block text-sm-b font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Description
-        </label>
-        <textarea
-          name="description"
-          id="description"
-          rows="4"
-          value={form.description}
-          onChange={handleChange}
-          required
-          placeholder="Describe your project, why it needs funding, and what supporters will receive."
-          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-50 focus:ring-lime-500 focus:border-lime-500 focus:shadow-lime-500/40 transition shadow-sm resize-none"
-        />
-      </div>
-
-      {/* Required Amount & Category/Deadline Group */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Required Amount (Goal) */}
-        <div>
-          <label
-            htmlFor="requiredAmount"
-            className="block text-sm-b font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            <DollarSign className="w-4 h-4 inline mr-1 align-sub" /> Required
-            Goal (in ETH)
-          </label>
-          <input
-            type="number"
-            name="requiredAmount"
-            id="requiredAmount"
-            value={form.requiredAmount}
-            onChange={handleChange}
-            required
-            step="0.0001"
-            min="0.0001"
-            placeholder="e.g., 5.0"
-            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-50 focus:ring-lime-500 focus:border-lime-500 focus:shadow-lime-500/40 transition shadow-sm"
-          />
+    <div className="p-1 bg-white/70 dark:bg-white/5 backdrop-blur-3xl rounded-[2.5rem] border border-gray-200 dark:border-white/10 shadow-2xl transition-all duration-500">
+      <div className="p-8 md:p-12">
+        {/* Progress Bar */}
+        <div className="flex gap-2 mb-10">
+          {[1, 2, 3].map((s) => (
+            <div
+              key={s}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                step >= s
+                  ? "flex-1 bg-lime-500 shadow-[0_0_10px_rgba(132,204,22,0.4)]"
+                  : "w-4 bg-gray-200 dark:bg-white/10"
+              }`}
+            />
+          ))}
         </div>
 
-        {/* Category Select Field */}
-        <div>
-          <label
-            htmlFor="category"
-            className="block text-sm-b font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            <Tag className="w-4 h-4 inline mr-1 align-sub" /> Category
-          </label>
-          <select
-            name="category"
-            id="category"
-            value={form.category}
-            onChange={handleChange}
-            required
-            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-50 focus:ring-lime-500 focus:border-lime-500 focus:shadow-lime-500/40 transition shadow-sm"
-          >
-            <option value="" disabled>
-              Select a category
-            </option>
-            <option value="Art">Art</option>
-            <option value="Tech">Tech</option>
-            <option value="Community">Community</option>
-            <option value="Charity">Charity</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Deadline (Date/Time Picker) */}
-        <div>
-          <label
-            htmlFor="deadline"
-            className="block text-sm-b font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            <Calendar className="w-4 h-4 inline mr-1 align-sub" /> Deadline
-          </label>
-          <input
-            type="datetime-local"
-            name="deadline"
-            id="deadline"
-            value={form.deadline}
-            onChange={handleChange}
-            required
-            // Set minimum to a time slightly in the future to prevent immediate failure
-            min={new Date(Date.now() - 60000).toISOString().slice(0, 16)}
-            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-50 focus:ring-lime-500 focus:border-lime-500 focus:shadow-lime-500/40 transition shadow-sm"
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            This will be converted to a Unix Timestamp (seconds).
-          </p>
-        </div>
-
-        {/* Image File Upload Field */}
-        <div>
-          <label
-            htmlFor="imageFile"
-            className="block text-sm-b font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            <Image className="w-4 h-4 inline mr-1 align-sub" /> Project Image
-          </label>
-          <input
-            type="file"
-            name="imageFile"
-            id="imageFile"
-            accept="image/*"
-            onChange={handleChange}
-            required
-            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-lime-50 file:text-lime-700 hover:file:bg-lime-100 focus:ring-lime-500 focus:border-lime-500 focus:shadow-lime-500/40 transition shadow-sm"
-          />
-        </div>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="p-3 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium animate-fade-in-down">
-          {error}
-        </div>
-      )}
-
-      {/* Submit Button */}
-      <button
-        type="submit"
-        disabled={isSubmitting || !isCreator || uploadLoading}
-        className="w-full flex items-center justify-center px-6 py-3 border border-transparent text-lg font-medium rounded-full text-white bg-lime-600 hover:bg-lime-700 disabled:bg-gray-500 disabled:shadow-none transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] shadow-lg shadow-lime-500/50"
-      >
-        {isSubmitting || uploadLoading ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin mr-2" />
-            {uploadLoading ? "Uploading to IPFS..." : "Sending Transaction..."}
-          </>
-        ) : (
-          <>
-            <RocketIcon className="w-5 h-5 mr-2 group-hover:translate-x-1 transition" />
-            Launch Campaign
-          </>
+        {/* STEP 1: Vision */}
+        {step === 1 && (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <label className="block text-xs font-black uppercase tracking-widest text-gray-500 dark:text-white/40 mb-2">
+                Campaign Title *
+              </label>
+              <input
+                name="title"
+                value={form.title}
+                onChange={handleChange}
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-4 rounded-2xl text-lg font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-lime-500/50 transition-all"
+                placeholder="Project name..."
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-black uppercase tracking-widest text-gray-500 dark:text-white/40 mb-2">
+                Description *
+              </label>
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                rows="5"
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-4 rounded-2xl text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-lime-500/50 transition-all resize-none"
+                placeholder="Explain your vision..."
+              />
+            </div>
+          </div>
         )}
-      </button>
-    </form>
+
+        {/* STEP 2: Goal & Logistics */}
+        {step === 2 && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-gray-500 dark:text-white/40 mb-2">
+                  Goal (ETH) *
+                </label>
+                <div className="relative">
+                  <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-lime-500" />
+                  <input
+                    type="number"
+                    step="0.0001"
+                    min="0.0001"
+                    name="requiredAmount"
+                    value={form.requiredAmount}
+                    onChange={handleChange}
+                    className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-4 pl-12 rounded-2xl font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-lime-500/50"
+                    placeholder="0.1"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-gray-500 dark:text-white/40 mb-2">
+                  Category *
+                </label>
+                <div className="relative">
+                  <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-lime-500 pointer-events-none" />
+                  <select
+                    name="category"
+                    value={form.category}
+                    onChange={handleChange}
+                    className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-4 pl-12 rounded-2xl font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-lime-500/50 appearance-none cursor-pointer"
+                  >
+                    <option value="" className="dark:bg-gray-900">
+                      Select Category
+                    </option>
+                    <option value="Art" className="dark:bg-gray-900">
+                      Art
+                    </option>
+                    <option value="Tech" className="dark:bg-gray-900">
+                      Tech
+                    </option>
+                    <option value="Charity" className="dark:bg-gray-900">
+                      Charity
+                    </option>
+                    <option value="Other" className="dark:bg-gray-900">
+                      Other
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-black uppercase tracking-widest text-gray-500 dark:text-white/40 mb-2">
+                Deadline *
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-lime-500 pointer-events-none" />
+                <input
+                  type="datetime-local"
+                  name="deadline"
+                  value={form.deadline}
+                  onChange={handleChange}
+                  className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-4 pl-12 rounded-2xl font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-lime-500/50 dark:[color-scheme:dark]"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: Media & Preview */}
+        {step === 3 && (
+          <div className="space-y-8 animate-fade-in">
+            <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-black/10 dark:border-white/10 rounded-3xl group hover:border-lime-500/50 transition-all cursor-pointer relative overflow-hidden bg-black/[0.02] dark:bg-white/[0.02]">
+              {imagePreview && (
+                <img
+                  src={imagePreview}
+                  className="absolute inset-0 w-full h-full object-cover opacity-20"
+                  alt="Preview"
+                />
+              )}
+              <input
+                type="file"
+                name="imageFile"
+                onChange={handleChange}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+              <ImageIcon className="w-12 h-12 text-gray-400 mb-4 group-hover:text-lime-500 transition-colors" />
+              <p className="font-bold text-gray-500 dark:text-white/40 text-center">
+                Upload Campaign Cover *<br />
+                <span className="text-xs font-normal">
+                  (Required to Launch)
+                </span>
+              </p>
+            </div>
+
+            <div className="p-6 bg-white/50 dark:bg-white/5 backdrop-blur-xl rounded-3xl border border-black/5 dark:border-white/10 shadow-xl">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-lime-600 dark:text-lime-400 mb-4 flex items-center gap-2">
+                <Eye className="w-3 h-3" /> Real-time Preview
+              </h4>
+              <div className="flex gap-4 items-center">
+                <div className="w-16 h-16 rounded-xl bg-gray-200 dark:bg-white/10 overflow-hidden shadow-inner">
+                  {imagePreview && (
+                    <img
+                      src={imagePreview}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <p className="font-black text-gray-900 dark:text-white truncate">
+                    {form.title || "Untitled Vision"}
+                  </p>
+                  <p className="text-xs font-bold text-lime-600 dark:text-lime-400">
+                    {form.requiredAmount || "0.0"} ETH Goal
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation Buttons */}
+        <div className="mt-12 flex justify-between items-center">
+          {step > 1 ? (
+            <button
+              onClick={() => setStep(step - 1)}
+              className="flex items-center gap-2 font-bold text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all hover:-translate-x-1"
+            >
+              <ChevronLeft className="w-5 h-5" /> Back
+            </button>
+          ) : (
+            <div />
+          )}
+
+          {step < 3 ? (
+            <button
+              onClick={() => {
+                if (canGoToNextStep()) setStep(step + 1);
+                else toast.error("Please fill in all fields.");
+              }}
+              className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-black rounded-2xl font-bold flex items-center gap-2 hover:scale-105 transition-all shadow-xl active:scale-95"
+            >
+              Next Step <ChevronRight className="w-5 h-5" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="px-8 py-4 bg-lime-500 text-black rounded-2xl font-black flex items-center gap-2 hover:scale-105 transition-all shadow-xl shadow-lime-500/20 disabled:bg-gray-400 active:scale-95"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <RocketIcon className="w-5 h-5" /> Launch Now
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -1,3 +1,7 @@
+// src\components\Home\Footer.js
+
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import {
@@ -7,145 +11,125 @@ import {
   Heart,
   Globe,
   ShieldCheck,
+  Rocket,
+  Zap,
 } from "lucide-react";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 mt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer className="w-full bg-white/70 dark:bg-[#0a0a0b]/70 backdrop-blur-xl border-t border-gray-200 dark:border-white/10 mt-20 relative overflow-hidden">
+      {/* Decorative Glow for Dark Mode */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-lime-500/50 to-transparent" />
+
+      <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand Section */}
-          <div className="col-span-1 md:col-span-1">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 bg-white rounded-full animate-pulse" />
+          <div className="space-y-6">
+            <Link href="/" className="flex items-center space-x-2 group">
+              <div className="w-8 h-8 bg-gradient-to-tr from-lime-500 to-yellow-400 rounded-lg flex items-center justify-center shadow-lg shadow-lime-500/20 group-hover:rotate-12 transition-transform">
+                <Rocket className="w-5 h-5 text-black" />
               </div>
-
-              <Link
-                href="/"
-                className="flex items-center space-x-2 transition-transform duration-300 hover:scale-[1.05]"
-              >
-                <span className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-indigo-600 to-violet-600">
-                  LUMILIGHT
-                </span>
-              </Link>
-            </div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
-              Illuminating the future of decentralized finance. Raise funds,
-              support creators, and build communities on the blockchain.
+              <span className="text-xl font-black tracking-tighter text-gray-900 dark:text-white">
+                LUMILIGHT
+              </span>
+            </Link>
+            <p className="text-gray-500 dark:text-white/40 text-sm leading-relaxed font-medium">
+              Empowering the next generation of creators through decentralized
+              crowdfunding. Built for the community, secured by the blockchain.
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+            <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-6">
               Platform
             </h3>
-            <ul className="space-y-3">
-              <li>
-                <Link
-                  href="/"
-                  className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm transition-colors"
-                >
-                  Explore Campaigns
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/create-campaign"
-                  className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm transition-colors"
-                >
-                  Start Campaign
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/dashboard"
-                  className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm transition-colors"
-                >
-                  Creator Dashboard
-                </Link>
-              </li>
+            <ul className="space-y-4">
+              {["Explore Campaigns", "Create-Campaign", "Dashboard"].map(
+                (item) => (
+                  <li key={item}>
+                    <Link
+                      href={
+                        item === "Explore Campaigns"
+                          ? "/"
+                          : `/${item.toLowerCase()}`
+                      }
+                      className="text-gray-500 dark:text-white/40 hover:text-lime-600 dark:hover:text-lime-400 text-sm font-bold transition-colors"
+                    >
+                      {item}
+                    </Link>
+                  </li>
+                ),
+              )}
             </ul>
           </div>
 
           {/* Resources */}
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+            <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-6">
               Developer
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-4">
               <li>
                 <a
                   href="https://github.com/Deependra-Bhatt/web3_CrowdfundingDApp"
                   target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm transition-colors"
+                  rel="noreferrer"
+                  className="flex items-center text-gray-500 dark:text-white/40 hover:text-lime-600 dark:hover:text-lime-400 text-sm font-bold transition-colors"
                 >
-                  <Github className="w-4 h-4 mr-2" />
-                  GitHub Source
+                  <Github className="w-4 h-4 mr-2" /> GitHub Source
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="flex items-center text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm transition-colors"
-                >
-                  <ShieldCheck className="w-4 h-4 mr-2" />
-                  Smart Contracts
-                </a>
+                <div className="flex items-center text-gray-500 dark:text-white/40 text-sm font-bold cursor-help">
+                  <ShieldCheck className="w-4 h-4 mr-2" /> Audited Contracts
+                </div>
               </li>
               <li>
                 <a
-                  href="https://polygonscan.com/"
+                  href="https://amoy.polygonscan.com/"
                   target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm transition-colors"
+                  rel="noreferrer"
+                  className="flex items-center text-gray-500 dark:text-white/40 hover:text-lime-600 dark:hover:text-lime-400 text-sm font-bold transition-colors"
                 >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Polygon Explorer
+                  <ExternalLink className="w-4 h-4 mr-2" /> PolygonScan
                 </a>
               </li>
             </ul>
           </div>
 
           {/* Contact/Newsletter */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
-              Stay Connected
+          <div className="space-y-6">
+            <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em]">
+              Community
             </h3>
-            <div className="flex space-x-4">
-              <a
-                href="#"
-                className="p-2 bg-slate-100 dark:bg-slate-900 rounded-full text-slate-600 dark:text-slate-400 hover:bg-indigo-600 hover:text-white transition-all"
-              >
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="p-2 bg-slate-100 dark:bg-slate-900 rounded-full text-slate-600 dark:text-slate-400 hover:bg-indigo-600 hover:text-white transition-all"
-              >
-                <Globe className="w-5 h-5" />
-              </a>
+            <div className="flex space-x-3">
+              {[Twitter, Globe, Zap].map((Icon, i) => (
+                <a
+                  key={i}
+                  href="#"
+                  className="p-3 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-500 dark:text-white/60 hover:text-lime-500 hover:border-lime-500/50 transition-all"
+                >
+                  <Icon className="w-5 h-5" />
+                </a>
+              ))}
             </div>
-            <div className="mt-6">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse" />
-                Polygon Network Live
-              </span>
+            <div className="inline-flex items-center px-3 py-1.5 rounded-xl text-[10px] font-black bg-lime-500/10 text-lime-600 dark:text-lime-400 border border-lime-500/20">
+              <span className="w-2 h-2 bg-lime-500 rounded-full mr-2 animate-pulse" />
+              POLYGON AMOY LIVE
             </div>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-slate-200 dark:border-slate-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-slate-500 dark:text-slate-400">
-          <p>&copy; {currentYear} LUMILIGHT. All rights reserved.</p>
-          <div className="flex items-center mt-4 md:mt-0 space-x-1">
+        <div className="border-t border-gray-200 dark:border-white/5 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/20">
+          <p>&copy; {currentYear} LUMILIGHT . ALL RIGHTS RESERVED.</p>
+          <div className="flex items-center mt-4 md:mt-0 gap-1">
             <span>Built with</span>
-            <Heart className="w-4 h-4 text-rose-500 fill-current" />
-            <span>on Polygon</span>
+            <Heart className="w-3 h-3 text-rose-500 fill-current" />
+            <span>on Polygon Amoy</span>
           </div>
         </div>
       </div>

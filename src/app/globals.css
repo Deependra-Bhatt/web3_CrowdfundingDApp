@@ -1,9 +1,37 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+@theme {
+  --color-primary-glass: rgba(255, 255, 255, 0.05);
+}
+
+/* Fix for the "jumping" scrollbar issue */
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  @apply min-h-screen transition-colors duration-300;
+  /* Light Mode Defaults */
+  background: radial-gradient(circle at top right, #f8fafc, #e2e8f0);
+  color: #0f172a;
+}
+
+/* Dark Mode Specifics */
+.dark body {
+  background: radial-gradient(circle at top right, #0a0a0b, #000000);
+  color: #ffffff;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.2);
+  border-radius: 10px;
+}
 
 /* Ensures elements stay at their initial state (opacity: 0) before the animation starts, crucial for staggered entry */
 .animate-fade-in-up,
@@ -12,3 +40,7 @@
 .animate-fade-in-fast {
   animation-fill-mode: both;
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

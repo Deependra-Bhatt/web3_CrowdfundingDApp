@@ -24,7 +24,7 @@ async function getCampaignData(campaignAddress) {
     const campaignContract = new Contract(
       campaignAddress,
       CAMPAIGN_ABI,
-      rpcProvider
+      rpcProvider,
     );
 
     // Call the getCampaignSummary function
@@ -54,7 +54,7 @@ async function getCampaignData(campaignAddress) {
   } catch (error) {
     console.error(
       `Error fetching campaign data for ${campaignAddress}:`,
-      error
+      error,
     );
     return null;
   }
