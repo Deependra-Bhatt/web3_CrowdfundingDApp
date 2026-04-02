@@ -8,7 +8,7 @@ import { Filter } from "lucide-react";
 import PaginationControls from "./PaginationControls";
 
 // --- Configuration ---
-const campaignsPerPage = 12;
+const campaignsPerPage = 8;
 
 /**
  * Main Client Component for the Homepage grid display.
@@ -114,34 +114,70 @@ const HomeClient = ({ initialCampaigns }) => {
         setFilter(value);
         setCurrentPage(1);
       }}
-      className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+      className={`
+      px-5 py-2.5 rounded-2xl text-xs font-semibold tracking-wide
+      transition-all duration-300 border
+      backdrop-blur-md
+      ${
         filter === value
-          ? "bg-lime-500 text-white shadow-lg scale-105"
-          : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-lime-100 dark:hover:bg-lime-900 hover:scale-[1.02]"
-      }`}
+          ? `
+            bg-gradient-to-r from-white to-gray-200
+            text-black
+            border-white/60
+            shadow-lg scale-105
+          `
+          : `
+            bg-white/10 dark:bg-white/5
+            text-gray-600 dark:text-white/60
+            border-white/10
+            hover:bg-white/20 hover:text-black dark:hover:text-white
+            hover:scale-105
+          `
+      }
+    `}
     >
       {label}
     </button>
   );
 
   return (
-    <div>
-      {/* --- Filter and Pagination Bar --- */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-        {/* Filter Buttons */}
-        <div className="flex items-center space-x-1 mb-4 md:mb-0">
-          <Filter className="w-5 h-5 text-lime-500" />
-          <FilterButton value="all" label="All" />
-          <FilterButton value="active" label="Active" />
-          <FilterButton value="successful" label="Successful" />
-          <FilterButton value="failed" label="Failed" />
+    <div className="space-y-10 mt-4">
+      {/* Glassmorphic Filter Bar */}
+      <div
+        className="
+    flex flex-col md:flex-row justify-between items-center gap-6 px-6 py-4
+    rounded-3xl
+    backdrop-blur-2xl
+    bg-white/60 dark:bg-white/5
+    border border-white/20 dark:border-white/10
+    shadow-[0_8px_40px_rgba(0,0,0,0.08)]
+    dark:shadow-[0_8px_40px_rgba(0,0,0,0.6)]
+    relative overflow-hidden
+  "
+      >
+        {/* subtle gradient glow */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/5 pointer-events-none" />
+
+        {/* Left - Filters */}
+        <div className="flex items-center gap-3 overflow-x-auto py-1 no-scrollbar z-10">
+          <FilterButton value="all" label="All Projects" />
+          <FilterButton value="active" label="Live" />
+          <FilterButton value="successful" label="Completed" />
+          <FilterButton value="failed" label="Expired" />
         </div>
 
-        {/* Total Count and Pagination */}
-        <div className="flex items-center space-x-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50 whitespace-nowrap">
-            {totalCampaignsInFilter} results
-          </h2>
+        {/* Divider */}
+        <div className="hidden md:block h-8 w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+
+        {/* Right - Count */}
+        <div className="z-10">
+          <p className="text-sm font-medium text-gray-600 dark:text-white/50">
+            Showing{" "}
+            <span className="text-gray-900 dark:text-white font-semibold">
+              {totalCampaignsInFilter}
+            </span>{" "}
+            campaigns
+          </p>
         </div>
       </div>
 

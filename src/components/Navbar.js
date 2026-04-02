@@ -9,13 +9,17 @@ import { useTheme } from "./ThemeContext";
 import ThemeToggle from "./ThemeToggle";
 import { useNotification } from "./NotificationContext";
 import { shortenAddress } from "@/utils";
-import { Wallet, CircleCheck, AlertTriangle, UserPlus } from "lucide-react";
+import {
+  Wallet,
+  CircleCheck,
+  AlertTriangle,
+  UserPlus,
+  LayoutDashboard,
+  PlusCircle,
+  Rocket,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
-/**
- * The navigation bar component that handles:-
- * wallet connection status, creator registration, and theme toggle.
- */
 const Navbar = () => {
   const {
     address,
@@ -26,178 +30,149 @@ const Navbar = () => {
     connectWallet,
     targetChain,
   } = useWeb3();
-
   const { theme } = useTheme();
-
   const [isCreator, setIsCreator] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isCheckingCreator, setIsCheckingCreator] = useState(false);
   const { showNotification: notify } = useNotification();
 
-  // Check Creator Status
   useEffect(() => {
     const checkCreatorStatus = async () => {
       if (factoryContract && address) {
         setIsCheckingCreator(true);
         try {
-          // Check if the current address is a registered creator
           const status = await factoryContract.isCreator(address);
           setIsCreator(status);
         } catch (error) {
-          console.error("Error checking creator status:", error);
-          // If the contract call fails, assume not a creator or a contract issue
           setIsCreator(false);
         } finally {
           setIsCheckingCreator(false);
         }
-      } else {
-        setIsCreator(false);
       }
     };
-
     checkCreatorStatus();
   }, [factoryContract, address]);
 
-  // Handle Creator Registration
   const handleRegisterCreator = async () => {
-    if (!signer || !factoryContract) {
-      notify("Please connect your wallet first.");
-      return;
-    }
-
+    if (!signer || !factoryContract) return notify("Connect wallet first.");
     setIsRegistering(true);
     try {
-      // Execute the registration transaction using the signer
       const tx = await factoryContract.registerAsCreator();
       await tx.wait();
-
       setIsCreator(true);
-      toast.success("Registration successful!");
+      toast.success("Welcome, Creator!");
     } catch (error) {
-      console.error("Error registering creator:", error);
       toast.error("Registration failed.");
     } finally {
       setIsRegistering(false);
     }
   };
 
-  // Determine Connection Status
   const isConnected = !!address && !!signer;
   const isWrongNetwork =
     isConnected && network?.name !== targetChain.toLowerCase();
 
+  // Reusable Nav Link Component for Desktop to keep code DRY
+  const NavLink = ({ href, children }) => (
+    <Link
+      href={href}
+      className="text-gray-500 hover:text-lime-500 dark:text-gray-400 dark:hover:text-white transition-colors relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-lime-500 after:transition-all after:duration-300 font-semibold"
+    >
+      {children}
+    </Link>
+  );
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-10 shadow-lg bg-white dark:bg-gray-900/90 backdrop-blur-md transition-all duration-500 animate-fade-in-down border-b border-gray-200 dark:border-gray-800">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo / Title */}
-          <Link
-            href="/"
-            className="flex items-center space-x-2 transition-transform duration-300 hover:scale-[1.05]"
-          >
-            <span
-              className={`text-2xl font-extrabold tracking-tight bg-clip-text text-transparent ${
-                theme === "light"
-                  ? "bg-linear-to-r from-yellow-500 to-lime-600"
-                  : "bg-linear-to-r from-lime-400 to-yellow-300"
-              }`}
-            >
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200/50 dark:border-white/10 bg-white/70 dark:bg-[#0a0a0b]/70 backdrop-blur-xl transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+          <Link href="/" className="flex items-center space-x-2 group">
+            <div className="w-8 h-8 bg-gradient-to-tr from-lime-500 to-yellow-400 rounded-lg flex items-center justify-center shadow-lg shadow-lime-500/20 group-hover:rotate-12 transition-transform">
+              <Rocket className="w-5 h-5 text-black" />
+            </div>
+            <span className="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
               LUMILIGHT
             </span>
           </Link>
 
-          {/* Navigation Links */}
-          <div className="hidden md:flex space-x-6 text-sm font-medium">
-            <Link
-              href="/"
-              className="text-gray-600 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-lime-500 after:transition-all after:duration-300"
-            >
-              Campaigns
-            </Link>
-            <Link
-              href="/create-campaign"
-              className="text-gray-600 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-lime-500 after:transition-all after:duration-300"
-            >
-              Create
-            </Link>
-            <Link
-              href="/dashboard"
-              className="text-gray-600 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-lime-500 after:transition-all after:duration-300"
-            >
-              Dashboard
-            </Link>
+          {/* Desktop Links with animated underline */}
+          <div className="hidden md:flex items-center space-x-8 text-sm">
+            <NavLink href="/">Campaigns</NavLink>
+            <NavLink href="/create-campaign">Create</NavLink>
+            <NavLink href="/dashboard">Dashboard</NavLink>
           </div>
 
-          {/* Right Side: Wallet Status, Creator, Theme */}
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            {/* Creator Status/Register Button */}
-            {isConnected && (
-              <div className="hidden sm:block">
-                {isCheckingCreator ? (
-                  <span className="text-sm text-gray-500 dark:text-gray-400 animate-pulse">
-                    Checking...
-                  </span>
-                ) : isCreator ? (
-                  <span className="flex items-center text-sm font-semibold text-lime-600 dark:text-lime-400 p-2 rounded-full bg-lime-100 dark:bg-lime-900/50 transition-all duration-300 hover:scale-[1.02]">
-                    <CircleCheck className="w-4 h-4 mr-1" /> Creator
-                  </span>
+          {/* Action Area */}
+          <div className="flex items-center space-x-3">
+            {/* Creator Badge (Desktop) */}
+            {isConnected && !isWrongNetwork && (
+              <div className="hidden lg:block">
+                {isCreator ? (
+                  <div className="px-3 py-1 rounded-full bg-lime-500/10 border border-lime-500/20 text-lime-600 dark:text-lime-400 text-xs font-bold flex items-center">
+                    <CircleCheck className="w-3 h-3 mr-1" /> VERIFIED CREATOR
+                  </div>
                 ) : (
                   <button
                     onClick={handleRegisterCreator}
-                    disabled={isRegistering}
-                    className="flex items-center text-sm font-semibold text-white bg-lime-500 hover:bg-lime-600 disabled:bg-lime-700/50 rounded-full px-3 py-1.5 transition-all duration-300 hover:scale-[1.05] active:scale-95 shadow-md shadow-lime-500/30"
+                    className="text-xs font-bold text-white bg-black dark:bg-white dark:text-black px-4 py-2 rounded-full hover:scale-105 transition-transform"
                   >
-                    <UserPlus className="w-4 h-4 mr-1" />
-                    {isRegistering ? "Registering..." : "Register Creator"}
+                    BECOME CREATOR
                   </button>
                 )}
               </div>
             )}
 
-            {/* Wallet Connection Status*/}
-            <div className="relative">
-              {isConnected ? (
-                <div
-                  className={`flex items-center text-sm font-medium rounded-full py-1.5 px-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${
-                    isWrongNetwork
-                      ? "bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/50"
-                      : "bg-lime-100 dark:bg-lime-800/50 text-lime-700 dark:text-lime-400 hover:bg-lime-200 dark:hover:bg-lime-700/50"
-                  }`}
-                  title={
-                    isWrongNetwork
-                      ? `Switch to ${targetChain}`
-                      : `Connected to ${network?.name}`
-                  }
-                >
-                  {isWrongNetwork ? (
-                    <AlertTriangle className="w-4 h-4 mr-1.5 animate-wiggle-once" />
-                  ) : (
-                    <Wallet className="w-4 h-4 mr-1.5" />
-                  )}
-                  {shortenAddress(address)}
-                </div>
+            {/* Wallet Button */}
+            <button
+              onClick={!isConnected ? connectWallet : null}
+              className={`flex items-center px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${
+                isWrongNetwork
+                  ? "bg-rose-500 text-white"
+                  : isConnected
+                  ? "bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
+            >
+              {isWrongNetwork ? (
+                <AlertTriangle className="w-4 h-4 mr-2" />
               ) : (
-                <button
-                  onClick={connectWallet}
-                  disabled={isLoading}
-                  className="flex items-center text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800/50 rounded-full px-3 py-1.5 transition-all duration-300 hover:scale-[1.05] active:scale-95 shadow-md shadow-blue-500/30"
-                >
-                  <Wallet
-                    className={`w-4 h-4 mr-1.5 ${
-                      isLoading ? "animate-pulse" : ""
-                    }`}
-                  />
-                  {isLoading ? "Connecting..." : "Connect Wallet"}
-                </button>
+                <Wallet className="w-4 h-4 mr-2" />
               )}
-            </div>
+              {isConnected ? shortenAddress(address) : "Connect"}
+            </button>
 
-            {/* Theme Toggle */}
             <ThemeToggle />
           </div>
         </div>
+      </nav>
+
+      {/* --- MOBILE BOTTOM NAVIGATION --- */}
+      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[400px]">
+        <div className="bg-white/80 dark:bg-black/80 backdrop-blur-2xl border border-gray-200/50 dark:border-white/10 rounded-2xl p-2 flex justify-around items-center shadow-2xl">
+          <Link
+            href="/"
+            className="flex flex-col items-center p-2 text-gray-400 hover:text-lime-500"
+          >
+            <Rocket className="w-6 h-6" />
+            <span className="text-[10px] mt-1 font-bold">Explore</span>
+          </Link>
+          <Link
+            href="/create-campaign"
+            className="flex flex-col items-center p-2 text-gray-400 hover:text-lime-500"
+          >
+            <PlusCircle className="w-6 h-6" />
+            <span className="text-[10px] mt-1 font-bold">Launch</span>
+          </Link>
+          <Link
+            href="/dashboard"
+            className="flex flex-col items-center p-2 text-gray-400 hover:text-lime-500"
+          >
+            <LayoutDashboard className="w-6 h-6" />
+            <span className="text-[10px] mt-1 font-bold">Stats</span>
+          </Link>
+        </div>
       </div>
-    </nav>
+    </>
   );
 };
 
