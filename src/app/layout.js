@@ -8,6 +8,7 @@ import { NotificationProvider } from "../components/NotificationContext";
 import Navbar from "../components/Navbar";
 import { Toaster } from "react-hot-toast";
 import Footer from "@/components/Home/Footer";
+import { Analytics } from "@vercel/analytics/next";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
             </Web3Provider>
           </NotificationProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
