@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.20;
 
+// Import the guard
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 /**
  * @title Campaign
  * @dev Manages the crowdfunding campaign, holding funds in escrow and enforcing business logic.
+ * Inherits ReentrancyGuard to prevent cross-function reentrancy.
  */
-contract Campaign {
+contract Campaign is ReentrancyGuard { //Inheriting the guard
 
     // State Variables
     string public title;
@@ -137,8 +140,9 @@ contract Campaign {
     /**
      * @dev Allows the creator to withdraw funds and fees after the goal is met.
      * Uses escrowBalance (current available funds) to decide if withdrawal is allowed.
+     * Added nonReentrant modifier.
      */
-    function withdrawFunds() public onlyCreator notWithdrawn {
+    function withdrawFunds() public onlyCreator notWithdrawn nonReentrant{
         // Can withdraw if Goal Met AND Deadline Passed (standard)
         require(escrowBalance >= requiredAmount, "Campaign: Funding goal not met (available funds)");
         require(block.timestamp >= deadline, "Campaign: Deadline has not passed yet"); 
@@ -168,8 +172,9 @@ contract Campaign {
     /**
      * @dev Allows contributors to claim a refund if the goal was not met and the deadline passed.
      * Refunds decrement escrowBalance but DO NOT decrement receivedAmount (historical).
+     * Added nonReentrant modifier.
      */
-    function refund() public notWithdrawn {
+    function refund() public notWithdrawn nonReentrant{
         require(block.timestamp >= deadline, "Campaign: Deadline has not passed");
         require(escrowBalance < requiredAmount, "Campaign: Funding goal was met, no refund needed");
 

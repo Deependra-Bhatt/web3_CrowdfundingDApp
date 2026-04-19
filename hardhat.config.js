@@ -19,7 +19,7 @@ const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || "";
 
 /** @type import('hardhat/config').HardhatUserConfig */
 const config = {
-  solidity: "0.8.17",
+  solidity: "0.8.20",
   defaultNetwork: "polygon",
   networks: {
     hardhat: {},

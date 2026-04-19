@@ -130,6 +130,11 @@ const CreateCampaignForm = () => {
         `ipfs://${descriptionCID}`,
         deadlineUnix,
         PLATFORM_FEE_ADDRESS,
+        {
+          // Manually setting gas fees to satisfy the network
+          maxPriorityFeePerGas: ethers.parseUnits("30", "gwei"),
+          maxFeePerGas: ethers.parseUnits("50", "gwei"),
+        },
       );
 
       toast.loading("Mining Campaign...", { id: toastId });
@@ -156,6 +161,34 @@ const CreateCampaignForm = () => {
       </div>
     );
 
+  // Handle Non-Creator State
+  if (!isCreator) {
+    return (
+      <div className="p-12 text-center bg-white/70 dark:bg-white/5 backdrop-blur-3xl rounded-[2.5rem] border border-gray-200 dark:border-white/10 shadow-2xl">
+        <div className="flex flex-col items-center gap-6">
+          <div className="p-6 bg-red-500/10 rounded-full">
+            <UserX className="w-12 h-12 text-red-500" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white">
+              Not Registered as Creator
+            </h2>
+            <p className="text-gray-500 dark:text-white/60 max-w-sm mx-auto">
+              You need to register your profile before you can launch a
+              campaign.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/dashboard")} // Adjust route if your dashboard is elsewhere
+            className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-black rounded-2xl font-bold flex items-center gap-2 hover:scale-105 transition-all shadow-xl active:scale-95"
+          >
+            Go to Dashboard <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+  // Main Form (Only shown if isCreator is true)
   return (
     <div className="p-1 bg-white/70 dark:bg-white/5 backdrop-blur-3xl rounded-[2.5rem] border border-gray-200 dark:border-white/10 shadow-2xl transition-all duration-500">
       <div className="p-8 md:p-12">
