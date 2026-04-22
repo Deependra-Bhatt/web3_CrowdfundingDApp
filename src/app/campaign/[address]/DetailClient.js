@@ -138,7 +138,14 @@ const DetailClient = ({ initialData }) => {
     setTxStep(1);
     try {
       const contract = new Contract(campaign.address, campaignAbi, signer);
-      const tx = await contractFunction(contract);
+
+      // --- Define Overrides Here  for gas fees---
+      const overrides = {
+        maxPriorityFeePerGas: ethers.parseUnits("26", "gwei"),
+        maxFeePerGas: ethers.parseUnits("50", "gwei"),
+      };
+
+      const tx = await contractFunction(contract, overrides);
       setTxStep(2);
       toast.loading(`Mining ${label}...`, { id: "tx" });
       await tx.wait();
@@ -218,7 +225,11 @@ const DetailClient = ({ initialData }) => {
                   </p>
                   <button
                     onClick={() =>
-                      executeTransaction((c) => c.withdrawFunds(), "Withdrawal")
+                      executeTransaction(
+                        (contract, overrides) =>
+                          contract.withdrawFunds(overrides),
+                        "Withdrawal",
+                      )
                     }
                     className="w-full py-4 bg-lime-500 hover:bg-lime-400 text-black rounded-2xl font-black transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
                   >
@@ -236,7 +247,10 @@ const DetailClient = ({ initialData }) => {
                   </p>
                   <button
                     onClick={() =>
-                      executeTransaction((c) => c.refund(), "Refund")
+                      executeTransaction(
+                        (contract, overrides) => contract.refund(overrides),
+                        "Refund",
+                      )
                     }
                     className="w-full py-4 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
                   >
@@ -342,21 +356,34 @@ const DetailClient = ({ initialData }) => {
                   </span>
                 </div>
 
-                {parseFloat(donationAmount) > remainingNeeded && remainingNeeded > 0 && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-medium">
-                    <AlertTriangle className="w-4 h-4" />
-                    Note: Overfunding by {(parseFloat(donationAmount) - remainingNeeded).toFixed(4)} ETH.
-                  </div>
-                )}
+                {parseFloat(donationAmount) > remainingNeeded &&
+                  remainingNeeded > 0 && (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-medium">
+                      <AlertTriangle className="w-4 h-4" />
+                      Note: Overfunding by{" "}
+                      {(parseFloat(donationAmount) - remainingNeeded).toFixed(
+                        4,
+                      )}{" "}
+                      ETH.
+                    </div>
+                  )}
 
                 <button
                   onClick={() =>
                     executeTransaction(
-                      (c) => c.donate({ value: ethers.parseEther(donationAmount) }),
+                      (contract, overrides) =>
+                        contract.donate({
+                          ...overrides,
+                          value: ethers.parseEther(donationAmount),
+                        }),
                       "Donation",
                     )
                   }
-                  disabled={isTxLoading || !donationAmount || parseFloat(donationAmount) <= 0}
+                  disabled={
+                    isTxLoading ||
+                    !donationAmount ||
+                    parseFloat(donationAmount) <= 0
+                  }
                   className="w-full bg-lime-500 hover:bg-lime-400 disabled:bg-gray-300 dark:disabled:bg-gray-800 text-black font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 group shadow-xl shadow-lime-500/20 active:scale-95"
                 >
                   {isTxLoading ? (
@@ -387,7 +414,9 @@ const DetailClient = ({ initialData }) => {
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-all duration-500 ${
-                            txStep === step.s ? "animate-pulse scale-125 shadow-[0_0_8px_currentColor]" : ""
+                            txStep === step.s
+                              ? "animate-pulse scale-125 shadow-[0_0_8px_currentColor]"
+                              : ""
                           }`}
                         />
                         <span className="text-[10px] font-black uppercase tracking-[0.2em]">
@@ -425,7 +454,8 @@ const DetailClient = ({ initialData }) => {
                       if (unix > campaign.deadline + 604800)
                         return toast.error("Max 7 days!");
                       executeTransaction(
-                        (c) => c.extendDeadline(unix),
+                        (contract, overrides) =>
+                          contract.extendDeadline(unix, overrides),
                         "Extension",
                       );
                     }}

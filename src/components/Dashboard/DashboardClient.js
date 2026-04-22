@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useWeb3 } from "../Web3Context";
+import { ethers } from "ethers";
 import {
   Loader2,
   UserPlus,
@@ -47,7 +48,11 @@ const DashboardClient = () => {
     if (!signer || !factoryContract) return notify("Connect wallet first.");
     setIsRegistering(true);
     try {
-      const tx = await factoryContract.connect(signer).registerAsCreator();
+      const tx = await factoryContract.connect(signer).registerAsCreator({
+        // Manually setting gas fees to satisfy the network
+        maxPriorityFeePerGas: ethers.parseUnits("26", "gwei"),
+        maxFeePerGas: ethers.parseUnits("50", "gwei"),
+      });
       toast.loading("Registration initiated...", { id: "reg" });
       await tx.wait();
       setIsCreator(true);

@@ -132,7 +132,7 @@ const CreateCampaignForm = () => {
         PLATFORM_FEE_ADDRESS,
         {
           // Manually setting gas fees to satisfy the network
-          maxPriorityFeePerGas: ethers.parseUnits("30", "gwei"),
+          maxPriorityFeePerGas: ethers.parseUnits("26", "gwei"),
           maxFeePerGas: ethers.parseUnits("50", "gwei"),
         },
       );
