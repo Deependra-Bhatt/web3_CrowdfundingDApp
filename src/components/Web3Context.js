@@ -11,15 +11,16 @@ import toast from "react-hot-toast";
 
 const Web3Context = createContext();
 
-// Configuration 
-const TARGET_CHAIN_ID = 80002;
-const TARGET_CHAIN_NAME = "Amoy Testnet";
+// Configuration
+const TARGET_CHAIN_ID = 80002 ; //11155111;
+const TARGET_CHAIN_NAME = "Amoy Testnet"; //"Sepolia Testnet";
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_ADDRESS;
 const FACTORY_ABI = CampaignFactory.abi;
+// const RPC_URL =
+//   process.env.NEXT_PUBLIC_RPC_URL || "https://rpc.ankr.com/eth_sepolia";
 const RPC_URL =
   process.env.NEXT_PUBLIC_RPC_URL || "https://rpc-amoy.polygon.technology/";
-// End Configuration 
-
+// End Configuration
 
 export const Web3Provider = ({ children }) => {
   const [address, setAddress] = useState(null);
@@ -28,7 +29,7 @@ export const Web3Provider = ({ children }) => {
   const [network, setNetwork] = useState(null);
   const [factoryContract, setFactoryContract] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { showNotification: notify} = useNotification();
+  const { showNotification: notify } = useNotification();
 
   // value to expose the campaign ABI
   const campaignAbi = Campaign.abi;
@@ -49,7 +50,7 @@ export const Web3Provider = ({ children }) => {
           notify(
             `Wrong Network: Please switch to the ${TARGET_CHAIN_NAME} (ID: ${TARGET_CHAIN_ID}).`,
             "error",
-            7000
+            7000,
           );
           setAddress(null);
           setSigner(null);
@@ -67,9 +68,7 @@ export const Web3Provider = ({ children }) => {
         setFactoryContract(factory);
       } catch (error) {
         console.error("Error connecting wallet:", error);
-        toast.error(
-          "Failed to connect wallet."
-        );
+        toast.error("Failed to connect wallet.");
       } finally {
         setIsLoading(false);
       }
@@ -77,12 +76,12 @@ export const Web3Provider = ({ children }) => {
       notify(
         "Wallet Extension not detected. Please install MetaMask.",
         "error",
-        7000
+        7000,
       );
     }
   };
 
-  // 2. Initialize Read-Only Provider 
+  // 2. Initialize Read-Only Provider
   useEffect(() => {
     const rpcProvider = new JsonRpcProvider(RPC_URL);
     setProvider(rpcProvider);
@@ -91,7 +90,7 @@ export const Web3Provider = ({ children }) => {
     const readOnlyFactory = new Contract(
       FACTORY_ADDRESS,
       FACTORY_ABI,
-      rpcProvider
+      rpcProvider,
     );
     if (!factoryContract) setFactoryContract(readOnlyFactory);
 
@@ -103,7 +102,7 @@ export const Web3Provider = ({ children }) => {
     if (window.ethereum) {
       const handleAccountsChanged = (accounts) => {
         if (accounts.length > 0) {
-          connectWallet(); 
+          connectWallet();
         } else {
           toast.error("Wallet disconnected.");
           setAddress(null);
@@ -112,7 +111,7 @@ export const Web3Provider = ({ children }) => {
       };
 
       const handleChainChanged = () => {
-        window.location.reload(); 
+        window.location.reload();
       };
 
       window.ethereum.on("accountsChanged", handleAccountsChanged);
@@ -121,7 +120,7 @@ export const Web3Provider = ({ children }) => {
       return () => {
         window.ethereum.removeListener(
           "accountsChanged",
-          handleAccountsChanged
+          handleAccountsChanged,
         );
         window.ethereum.removeListener("chainChanged", handleChainChanged);
       };
@@ -132,10 +131,10 @@ export const Web3Provider = ({ children }) => {
     <Web3Context.Provider
       value={{
         address,
-        provider, 
-        signer, 
+        provider,
+        signer,
         network,
-        factoryContract, 
+        factoryContract,
         campaignAbi,
         isLoading,
         connectWallet,

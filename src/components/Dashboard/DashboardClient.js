@@ -44,7 +44,7 @@ const DashboardClient = () => {
   }, [factoryContract, address]);
 
   const handleRegisterCreator = async () => {
-    if (!signer || !factoryContract) return;
+    if (!signer || !factoryContract) return notify("Connect wallet first.");
     setIsRegistering(true);
     try {
       const tx = await factoryContract.connect(signer).registerAsCreator();
@@ -54,6 +54,7 @@ const DashboardClient = () => {
       toast.success("Welcome to the Creator Guild!", { id: "reg" });
     } catch (err) {
       toast.error(err?.reason || "Registration failed", { id: "reg" });
+      console.log(err);
     } finally {
       setIsRegistering(false);
     }
